@@ -3,205 +3,189 @@
 <head>
     <meta charset="UTF-8">
     <title>Admin Dashboard | PARKTOLL</title>
-
-    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
         body { background: #e8eff9; }
-
-        .navbar-brand {
-            font-weight: 600;
-            font-size: 1.3rem;
-        }
-
-        .dashboard-header {
-            text-align: center;
-            padding: 30px 0;
-        }
-
-        .dashboard-header img {
-            height: 90px;
-            margin-bottom: 10px;
-        }
-
-        .summary-card {
-            border-radius: 12px;
-            font-size: 1.1rem;
-        }
-
-        .card-title-small {
-            font-size: 0.9rem;
-            font-weight: 600;
-        }
-
-        .card-value {
-            font-size: 2rem;
-            font-weight: 700;
-        }
-
-        .section-title {
-            font-weight: 600;
-            font-size: 1.2rem;
-            color: #333;
-            margin-bottom: 10px;
-        }
-
-        .table th {
-            background: #0d6efd;
-            color: white;
-        }
-
-        .back-home-btn {
-            margin-top: 20px;
-        }
+        .navbar-brand { font-weight: 600; font-size: 1.3rem; }
+        .dashboard-header { text-align: center; padding: 20px 0; }
+        .dashboard-header img { height: 70px; margin-bottom: 10px; }
+        .summary-card { border-radius: 12px; border: none; transition: transform 0.2s; }
+        .summary-card:hover { transform: translateY(-5px); }
+        .card-title-small { font-size: 0.85rem; font-weight: 600; text-transform: uppercase; opacity: 0.9; }
+        .card-value { font-size: 2.2rem; font-weight: 700; }
+        .section-title { font-weight: 600; font-size: 1.2rem; color: #333; margin-bottom: 15px; }
+        .table th { background: #0d6efd; color: white; font-weight: 500; }
+        .badge-txn { font-family: 'Courier New', Courier, monospace; font-weight: bold; }
     </style>
 </head>
 
 <body>
 
-<!-- NAVBAR -->
-<nav class="navbar navbar-dark bg-dark px-4">
-    <span class="navbar-brand">PARKTOLL Admin Dashboard</span>
-
+<nav class="navbar navbar-dark bg-dark px-4 shadow-sm">
+    <span class="navbar-brand"><i class="fas fa-chart-line me-2"></i>PARKTOLL Admin</span>
     <div class="d-flex align-items-center">
-        <a href="/admin_home" class="btn btn-outline-light btn-sm me-3">
-            ← Admin Home
-        </a>
-
-        <span class="text-white me-4">
-            Welcome, {{ session["username"] }}
-        </span>
-
+        <a href="/admin_home" class="btn btn-outline-light btn-sm me-3">← Back to Menu</a>
+        <span class="text-white-50 me-4 small">Logged in as: <strong>{{ session["username"] }}</strong></span>
         <a href="/logout" class="btn btn-danger btn-sm">Logout</a>
     </div>
 </nav>
 
 <div class="container mt-4">
-
-    <!-- FLASH MESSAGES -->
     {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        {% for category, msg in messages %}
-          <div class="alert alert-{{category}} alert-dismissible fade show">
-              {{ msg }}
-              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      {% if messages %}{% for category, msg in messages %}
+          <div class="alert alert-{{category}} alert-dismissible fade show shadow-sm">
+              {{ msg }} <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
           </div>
-        {% endfor %}
-      {% endif %}
+      {% endfor %}{% endif %}
     {% endwith %}
 
-    <!-- HEADER -->
     <div class="dashboard-header">
-        <img src="{{ url_for('static', filename='images/logo.png') }}">
-        <h3>Admin Overview</h3>
+        <img src="{{ url_for('static', filename='images/logo.png') }}" onerror="this.src='https://cdn-icons-png.flaticon.com/512/300/300221.png'">
+        <h3>System Overview</h3>
     </div>
 
-    <!-- SUMMARY CARDS -->
     <div class="row g-3 mb-4 text-center">
         <div class="col-md-4">
-            <div class="card summary-card bg-primary text-white p-3 shadow-sm">
-                <div class="card-title-small">Total Tickets</div>
+            <div class="card summary-card bg-primary text-white p-3 shadow">
+                <div class="card-title-small">Total Tickets Issued</div>
                 <div class="card-value">{{ total }}</div>
             </div>
         </div>
-
         <div class="col-md-4">
-            <div class="card summary-card bg-warning text-dark p-3 shadow-sm">
-                <div class="card-title-small">Active Vehicles</div>
+            <div class="card summary-card bg-warning text-dark p-3 shadow">
+                <div class="card-title-small">Vehicles Currently Parked</div>
                 <div class="card-value">{{ active }}</div>
             </div>
         </div>
-
         <div class="col-md-4">
-            <div class="card summary-card bg-success text-white p-3 shadow-sm">
-                <div class="card-title-small">Total Income</div>
+            <div class="card summary-card bg-success text-white p-3 shadow">
+                <div class="card-title-small">Total Cash Collected</div>
                 <div class="card-value">₱{{ income }}</div>
             </div>
         </div>
     </div>
 
-    <!-- CHART -->
     <div class="row mb-4">
-        <div class="col">
-            <div class="card p-3 shadow-sm">
-                <div class="section-title">Active Vehicles by Type</div>
-                <canvas id="vehicleChart" height="200"></canvas>
+        <div class="col-md-4">
+            <div class="card p-3 shadow-sm h-100">
+                <div class="section-title text-center">Vehicle Distribution</div>
+                <div style="position: relative; height:250px;">
+                    <canvas id="vehicleChart"></canvas>
+                </div>
             </div>
         </div>
-    </div>
 
-    <!-- RECENT TICKETS -->
-    <div class="row mb-4">
-        <div class="col">
-            <div class="card p-3 shadow-sm">
-                <div class="section-title">Recent Tickets</div>
-
+        <div class="col-md-8">
+            <div class="card p-3 shadow-sm h-100">
+                <div class="section-title">Recent Staff House Payments</div>
                 <div class="table-responsive">
-                    <table class="table table-striped table-bordered">
-                        <thead>
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
                             <tr>
-                                <th>ID</th>
-                                <th>User</th>
-                                <th>Plate</th>
-                                <th>Vehicle</th>
-                                <th>Slot</th>
-                                <th>Entry</th>
-                                <th>Exit</th>
-                                <th>Fee</th>
-                                <th>Discount</th>
+                                <th>TXN Code</th>
+                                <th>Vehicle Info</th>
+                                <th>Status</th>
+                                <th>Amount Paid</th>
                             </tr>
                         </thead>
                         <tbody>
-                        {% for t in recent %}
+                        {% for t in recent[:5] %}
                             <tr>
-                                <td>{{ t.id }}</td>
-                                <td>{{ t.username }}</td>
-                                <td>{{ t.plate_number }}</td>
-                                <td>{{ t.vehicle_type }}</td>
-                                <td>{{ t.slot }}</td>
-                                <td>{{ t.entry_time.strftime("%Y-%m-%d %H:%M:%S") }}</td>
+                                <td><span class="badge bg-secondary badge-txn">{{ t.transaction_no }}</span></td>
                                 <td>
-                                    {% if t.exit_time %}
-                                        {{ t.exit_time.strftime("%Y-%m-%d %H:%M:%S") }}
+                                    <div class="fw-bold">{{ t.plate_number }}</div>
+                                    <div class="small text-muted">{{ t.vehicle_type|capitalize }}</div>
+                                </td>
+                                <td>
+                                    {% if t.status == 'Not Paid' %}
+                                        <span class="badge bg-danger">Not Paid</span>
+                                    {% elif t.status == 'Partially Paid' %}
+                                        <span class="badge bg-warning text-dark">Partially Paid</span>
                                     {% else %}
-                                        <span class="badge bg-warning text-dark">Active</span>
+                                        <span class="badge bg-success">Fully Paid</span>
                                     {% endif %}
                                 </td>
-                                <td>₱{{ t.fee }}</td>
-                                <td>{{ t.discount_type }}</td>
+                                <td class="text-success fw-bold">₱{{ t.total_paid }}</td>
                             </tr>
                         {% endfor %}
                         </tbody>
                     </table>
-
-                    {% if recent|length == 0 %}
-                        <p class="text-center text-muted mt-3">No tickets available.</p>
-                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
 
+    <div class="row mb-5">
+        <div class="col">
+            <div class="card p-4 shadow-sm">
+                <div class="section-title">All Transaction Records</div>
+                <div class="table-responsive">
+                    <table class="table table-striped table-bordered table-sm align-middle">
+                        <thead class="table-dark text-center">
+                            <tr>
+                                <th>TXN #</th>
+                                <th>User</th>
+                                <th>Plate</th>
+                                <th>Slot</th>
+                                <th>Entry</th>
+                                <th>Exit</th>
+                                <th>Total Paid</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for t in recent %}
+                            <tr>
+                                <td class="text-center fw-bold">{{ t.transaction_no }}</td>
+                                <td>{{ t.username }}</td>
+                                <td>{{ t.plate_number }}</td>
+                                <td class="text-center">{{ 'S-' if t.vehicle_type == 'car' else 'M-' }}{{ t.slot }}</td>
+                                <td class="small">{{ t.entry_time.strftime("%m-%d %H:%M") }}</td>
+                                <td class="small">
+                                    {% if t.exit_time %}{{ t.exit_time.strftime("%m-%d %H:%M") }}{% else %}--{% endif %}
+                                </td>
+                                <td class="text-center text-success fw-bold">₱{{ t.total_paid }}</td>
+                                <td class="text-center">
+                                    <span class="small">{{ t.status }}</span>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                    {% if recent|length == 0 %}
+                        <p class="text-center text-muted mt-3">No transactions found in system.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
-<!-- CHART SCRIPT -->
 <script>
 const ctx = document.getElementById('vehicleChart').getContext('2d');
 new Chart(ctx, {
-    type: 'pie',
+    type: 'doughnut',
     data: {
         labels: ['Cars', 'Motorcycles'],
         datasets: [{
             data: [{{ car_count }}, {{ moto_count }}],
-            backgroundColor: ['#0d6efd', '#198754']
+            backgroundColor: ['#0d6efd', '#ffc107'],
+            borderColor: '#ffffff',
+            borderWidth: 2
         }]
+    },
+    options: {
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { position: 'bottom' }
+        }
     }
 });
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-
 </body>
 </html>

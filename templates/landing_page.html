@@ -1,23 +1,236 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Parking Toll System</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-</head>
-<body>
+from flask import Flask, render_template, request, redirect, session, flash, url_for
+from datetime import datetime
 
-<div class="container">
+app = Flask(__name__)
+app.secret_key = "parking_secret"
 
-    <img src="{{ url_for('static', filename='images/logo.png') }}" class="logo">
+# ================= IN-MEMORY DATABASE =================
+users = [
+    {
+        "fullname": "Administrator", 
+        "username": "admin", 
+        "password": "admin123", 
+        "email": "admin@gmail.com",
+        "category": "Admin"
+    },
+    {
+        "fullname": "Official Staff", 
+        "username": "staff", 
+        "password": "staff123", 
+        "email": "staff@gmail.com",
+        "category": "Staff"
+    }
+]
 
-    <h2>"Parking Toll System"</h2>
+tickets = []
+payments = []
+car_slots = [False] * 10
+motorcycle_slots = [False] * 10
+DISCOUNTS = {"student": 0.2, "senior": 0.3, "pwd": 0.5, "none": 0}
 
-    <div class="buttons">
-        <a href="/login" class="btn">Login</a>
-        <a href="/register" class="btn">Register</a>
-    </div>
+# ================= LANDING PAGE (FIXES 404 ERROR) =================
+@app.route("/")
+def landing():
+    # If you have a landing_page.html, use: return render_template("landing_page.html")
+    # Otherwise, redirecting to login is the safest way to start the app.
+    return redirect(url_for('login'))
 
-</div>
+# ================= LOGIN & AUTH =================
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        email = request.form["email"]
+        password = request.form["password"]
+        user = next((u for u in users if u["email"] == email and u["password"] == password), None)
+        
+        if user:
+            session["username"] = user["username"]
+            session["category"] = user["category"]
+            
+            if user["category"] == "Admin":
+                return redirect(url_for("admin_home"))
+            elif user["category"] == "Staff":
+                return redirect(url_for("staff_home"))
+            else:
+                return redirect(url_for("user_home"))
+        
+        flash("Invalid email or password!", "danger")
+    return render_template("login.html")
 
-</body>
-</html>
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    if request.method == "POST":
+        users.append({
+            "fullname": request.form["fullname"],
+            "username": request.form["username"],
+            "email": request.form["email"],
+            "password": request.form["password"],
+            "category": "User"
+        })
+        flash("Account created successfully!", "success")
+        return redirect(url_for("login"))
+    return render_template("register.html")
+
+# ================= HOME ROUTES =================
+@app.route("/admin_home")
+def admin_home():
+    if session.get("category") != "Admin":
+        return redirect(url_for("login"))
+    return render_template("admin_home.html")
+
+@app.route("/staff_home")
+def staff_home():
+    if session.get("category") != "Staff":
+        return redirect(url_for("login"))
+    return render_template("staff_home.html")
+
+@app.route("/user_home")
+def user_home():
+    if session.get("category") != "User":
+        return redirect(url_for("login"))
+    return render_template("user_home.html")
+
+# ================= TICKETING STAFF (PICKABLE SLOT + NO DISCOUNT) =================
+@app.route("/ticketing_staff", methods=["GET", "POST"])
+def ticketing_staff():
+    if "username" not in session: 
+        return redirect(url_for("login"))
+
+    # Handling GET: Pre-fill from the slot picker
+    if request.method == "GET":
+        selected = request.args.get("selected_slot", "")
+        v_type = "car"
+        s_num = ""
+        if "-" in selected:
+            v_type, s_num = selected.split("-")
+        return render_template("ticketing_staff.html",
+                               available_car=car_slots.count(False),
+                               available_moto=motorcycle_slots.count(False),
+                               pre_type=v_type, 
+                               pre_slot=s_num)
+
+    # Handling POST: Processing the booking
+    if request.method == "POST":
+        vehicle_type = request.form["vehicle_type"]
+        plate = request.form["plate"]
+        booking_date = request.form.get("booking_date")
+        time_in = request.form.get("time_in")
+        time_out = request.form.get("time_out")
+        manual_slot = request.form.get("manual_slot")
+
+        try:
+            # If a slot was picked from the UI, use it. Otherwise, find first available.
+            if manual_slot and manual_slot != "":
+                slot_idx = int(manual_slot) - 1
+            else:
+                slot_idx = car_slots.index(False) if vehicle_type == "car" else motorcycle_slots.index(False)
+        except ValueError:
+            flash("No slots available for this vehicle type!", "danger")
+            return redirect(url_for("ticketing_staff"))
+
+        # Mark as occupied
+        if vehicle_type == "car":
+            car_slots[slot_idx] = True
+        else:
+            motorcycle_slots[slot_idx] = True
+
+        ticket_id = len(tickets) + 1
+        tickets.append({
+            "id": ticket_id, 
+            "username": session["username"], 
+            "plate_number": plate,
+            "vehicle_type": vehicle_type, 
+            "slot": slot_idx + 1, 
+            "entry_time": datetime.now(),
+            "booking_date": booking_date, 
+            "planned_in": time_in, 
+            "planned_out": time_out,
+            "exit_time": None, 
+            "fee": 0, 
+            "discount_type": "none"
+        })
+        flash(f"Slot {slot_idx + 1} reserved successfully!", "success")
+        return redirect(url_for("ticket", ticket_id=ticket_id))
+
+# ================= STAFF ORIGINAL (HAS DISCOUNT) =================
+@app.route("/ticketing_stafforig", methods=["GET", "POST"])
+def ticketing_stafforig():
+    if session.get("category") != "Staff": 
+        return redirect(url_for("login"))
+        
+    if request.method == "POST":
+        vehicle_type = request.form["vehicle_type"]
+        discount_type = request.form.get("discount_type", "none")
+        
+        try:
+            slot_idx = car_slots.index(False) if vehicle_type == "car" else motorcycle_slots.index(False)
+            if vehicle_type == "car":
+                car_slots[slot_idx] = True
+            else:
+                motorcycle_slots[slot_idx] = True
+        except ValueError:
+            flash("No slots available!", "danger")
+            return redirect(url_for("ticketing_stafforig"))
+
+        ticket_id = len(tickets) + 1
+        tickets.append({
+            "id": ticket_id, 
+            "plate_number": request.form["plate"], 
+            "vehicle_type": vehicle_type, 
+            "slot": slot_idx + 1,
+            "entry_time": datetime.now(), 
+            "exit_time": None, 
+            "fee": 0, 
+            "discount_type": discount_type
+        })
+        return redirect(url_for("ticket", ticket_id=ticket_id))
+        
+    return render_template("ticketing_stafforig.html", 
+                           available_car=car_slots.count(False),
+                           available_moto=motorcycle_slots.count(False))
+
+# ================= EXIT & SLOTS =================
+@app.route("/exit/<int:ticket_id>")
+def exit_vehicle(ticket_id):
+    ticket_data = next((t for t in tickets if t["id"] == ticket_id), None)
+    if not ticket_data or ticket_data.get("exit_time"): 
+        return redirect(url_for("login"))
+
+    ticket_data["exit_time"] = datetime.now()
+    # Calculate fee (Base ₱50 per hour)
+    diff = ticket_data["exit_time"] - ticket_data["entry_time"]
+    hours = max(1, int(diff.total_seconds() // 3600))
+    
+    discount_val = DISCOUNTS.get(ticket_data.get("discount_type", "none"), 0)
+    ticket_data["fee"] = int((hours * 50) * (1 - discount_val))
+
+    # Free the slot
+    if ticket_data["vehicle_type"] == "car":
+        car_slots[ticket_data["slot"] - 1] = False
+    else:
+        motorcycle_slots[ticket_data["slot"] - 1] = False
+        
+    flash(f"Vehicle exited. Total fee: ₱{ticket_data['fee']}", "success")
+    return redirect(url_for("ticket", ticket_id=ticket_id))
+
+@app.route("/active_slots_user")
+def active_slots_user():
+    if "username" not in session:
+        return redirect(url_for("login"))
+    return render_template("active_slots_user.html", car_slots=car_slots, moto_slots=motorcycle_slots)
+
+@app.route("/ticket/<int:ticket_id>")
+def ticket(ticket_id):
+    ticket_data = next((t for t in tickets if t["id"] == ticket_id), None)
+    if not ticket_data:
+        flash("Ticket not found!", "danger")
+        return redirect(url_for("login"))
+    return render_template("ticketing.html", ticket=ticket_data)
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("login"))
+
+if __name__ == "__main__":
+    app.run(debug=True)

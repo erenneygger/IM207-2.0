@@ -1,81 +1,80 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Active Parking Spaces</title>
+    <title>Pick Your Space</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
         body { background-color: #f8f9fa; }
         .slot-container {
-            background: white;
-            padding: 30px;
-            border-radius: 15px;
+            background: white; padding: 30px; border-radius: 15px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
-        .slot {
-            width: 70px;
-            height: 70px;
-            margin: 8px;
-            display: inline-flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-            border-radius: 10px;
-            transition: transform 0.2s;
-            font-size: 0.8rem;
+        /* Hide the actual radio button */
+        .slot-input { display: none; }
+
+        .slot-label {
+            width: 80px; height: 80px; margin: 8px;
+            display: inline-flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            color: white; font-weight: bold; border-radius: 10px;
+            cursor: pointer; transition: all 0.2s; font-size: 0.8rem;
         }
-        .slot:hover { transform: scale(1.05); }
+
         .available { background-color: #28a745; border: 2px solid #1e7e34; }
-        .occupied { background-color: #dc3545; border: 2px solid #bd2130; }
-        .slot i { font-size: 1.2rem; margin-bottom: 2px; }
+        .occupied { background-color: #dc3545; border: 2px solid #bd2130; cursor: not-allowed; opacity: 0.7; }
+
+        /* Highlight when selected */
+        .slot-input:checked + .slot-label {
+            background-color: #007bff;
+            border: 4px solid #004085;
+            transform: scale(1.1);
+            box-shadow: 0 0 15px rgba(0,123,255,0.5);
+        }
+
+        .slot-label i { font-size: 1.4rem; margin-bottom: 4px; }
     </style>
 </head>
-
 <body>
-<div class="container mt-5">
+<div class="container mt-5 mb-5">
     <div class="slot-container">
         <h3 class="mb-4 text-center text-primary">
-            <i class="fas fa-parking"></i> Real-Time Space Availability
+            <i class="fas fa-hand-pointer"></i> Select Your Parking Slot
         </h3>
 
-        <div class="d-flex justify-content-center gap-3 mb-5">
-            <div class="d-flex align-items-center gap-2">
-                <div style="width: 20px; height: 20px; background: #28a745; border-radius: 4px;"></div>
-                <span>Available</span>
+        <form action="{{ url_for('ticketing_staff') }}" method="GET">
+
+            <h5 class="border-bottom pb-2"><i class="fas fa-car"></i> Car Area (S-Series)</h5>
+            <div class="d-flex flex-wrap justify-content-center mb-5">
+                {% for occupied in car_slots %}
+                    {% set slot_id = loop.index %}
+                    <input type="radio" name="selected_slot" value="car-{{ slot_id }}" id="car-{{ slot_id }}" class="slot-input" {% if occupied %}disabled{% endif %}>
+                    <label for="car-{{ slot_id }}" class="slot-label {% if occupied %}occupied{% else %}available{% endif %}">
+                        <i class="fas {% if occupied %}fa-car-side{% else %}fa-check-circle{% endif %}"></i>
+                        S-{{ slot_id }}
+                    </label>
+                {% endfor %}
             </div>
-            <div class="d-flex align-items-center gap-2">
-                <div style="width: 20px; height: 20px; background: #dc3545; border-radius: 4px;"></div>
-                <span>Occupied</span>
+
+            <h5 class="border-bottom pb-2"><i class="fas fa-motorcycle"></i> Motorcycle Area (M-Series)</h5>
+            <div class="d-flex flex-wrap justify-content-center mb-4">
+                {% for occupied in moto_slots %}
+                    {% set slot_id = loop.index %}
+                    <input type="radio" name="selected_slot" value="moto-{{ slot_id }}" id="moto-{{ slot_id }}" class="slot-input" {% if occupied %}disabled{% endif %}>
+                    <label for="moto-{{ slot_id }}" class="slot-label {% if occupied %}occupied{% else %}available{% endif %}">
+                        <i class="fas {% if occupied %}fa-motorcycle{% else %}fa-plus-circle{% endif %}"></i>
+                        M-{{ slot_id }}
+                    </label>
+                {% endfor %}
             </div>
-        </div>
 
-        <h5 class="border-bottom pb-2"><i class="fas fa-car"></i> Car Parking Area</h5>
-        <div class="d-flex flex-wrap justify-content-center mb-5">
-            {% for occupied in car_slots %}
-                <div class="slot {% if occupied %}occupied{% else %}available{% endif %}">
-                    <i class="fas {% if occupied %}fa-car-side{% else %}fa-check-circle{% endif %}"></i>
-                    S-{{ loop.index }}
-                </div>
-            {% endfor %}
-        </div>
-
-        <h5 class="border-bottom pb-2"><i class="fas fa-motorcycle"></i> Motorcycle Parking Area</h5>
-        <div class="d-flex flex-wrap justify-content-center mb-4">
-            {% for occupied in moto_slots %}
-                <div class="slot {% if occupied %}occupied{% else %}available{% endif %}">
-                    <i class="fas {% if occupied %}fa-user-slash{% else %}fa-motorcycle{% endif %}"></i>
-                    M-{{ loop.index }}
-                </div>
-            {% endfor %}
-        </div>
-
-        <div class="text-center mt-4">
-            <a href="{{ url_for('user_home') }}" class="btn btn-dark px-5">
-                <i class="fas fa-arrow-left"></i> Back to Dashboard
-            </a>
-        </div>
+            <div class="text-center mt-5 gap-3 d-flex justify-content-center">
+                <a href="{{ url_for('staff_home') }}" class="btn btn-secondary px-4">Cancel</a>
+                <button type="submit" class="btn btn-primary btn-lg px-5">
+                    Confirm Selection <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 </body>

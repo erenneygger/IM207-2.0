@@ -1,53 +1,75 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Ticketing Staff</title>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Ticketing Staff</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        .contract-note { background-color: #fff3cd; border-left: 5px solid #ffc107; padding: 10px; font-size: 0.9rem; color: #856404; border-radius: 4px; }
+        .selected-badge { background-color: #e7f3ff; border: 1px solid #b3d7ff; color: #004085; padding: 10px; border-radius: 8px; font-weight: bold; }
+    </style>
 </head>
-<body>
-<div class="container mt-5 col-md-6">
-    <div class="card shadow-sm p-4 bg-white">
-        <h3 class="text-center mb-4">Parking Entry (Staff)</h3>
+<body class="bg-light">
+<div class="container mt-5 col-md-6 mb-5">
+    <div class="card shadow p-4 bg-white">
+        <h3 class="text-center mb-4 text-primary"><i class="fas fa-ticket-alt"></i> Complete Your Booking</h3>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-            {% for category, msg in messages %}
+          {% if messages %}{% for category, msg in messages %}
               <div class="alert alert-{{category}}">{{msg}}</div>
-            {% endfor %}
-          {% endif %}
+          {% endfor %}{% endif %}
         {% endwith %}
 
-        <p><strong>Available Car Slots:</strong> {{available_car}}</p>
-        <p><strong>Available Motorcycle Slots:</strong> {{available_moto}}</p>
+        {% if pre_slot|default('') %}
+        <div class="selected-badge text-center mb-4">
+            <i class="fas fa-map-marker-alt"></i> Selected Slot:
+            {{ 'Car' if pre_type == 'car' else 'Motorcycle' }} #{{ pre_slot }}
+        </div>
+        {% endif %}
 
         <form method="post">
+            <input type="hidden" name="manual_slot" value="{{ pre_slot|default('') }}">
+
             <div class="mb-3">
-                <label>Vehicle Type</label>
+                <label class="form-label fw-bold">Vehicle Type</label>
                 <select class="form-select" name="vehicle_type" required>
-                    <option value="car">Car</option>
-                    <option value="motorcycle">Motorcycle</option>
+                    <option value="car" {% if pre_type|default('') == 'car' %}selected{% endif %}>Car</option>
+                    <option value="motorcycle" {% if pre_type|default('') == 'moto' or pre_type|default('') == 'motorcycle' %}selected{% endif %}>Motorcycle</option>
                 </select>
             </div>
 
             <div class="mb-3">
-                <label>Plate Number</label>
-                <input type="text" name="plate" class="form-control" placeholder="Enter Plate Number" required>
+                <label class="form-label fw-bold">Plate Number</label>
+                <input type="text" name="plate" class="form-control" placeholder="ABC-1234" required>
             </div>
 
-            <div class="mb-3">
-                <label>Discount Type</label>
-                <select class="form-select" name="discount_type">
-                    <option value="none">None</option>
-                    <option value="student">Student (20%)</option>
-                    <option value="senior">Senior (30%)</option>
-                    <option value="pwd">PWD (50%)</option>
-                </select>
+            <div class="row">
+                <div class="col-md-12 mb-3">
+                    <label class="form-label fw-bold">Booking Date</label>
+                    <input type="date" name="booking_date" class="form-control" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label fw-bold">Time In</label>
+                    <input type="time" name="time_in" class="form-control" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label fw-bold">Time Out</label>
+                    <input type="time" name="time_out" class="form-control" required>
+                </div>
             </div>
 
-            <button class="btn btn-success w-100">Create Ticket</button>
+            <div class="contract-note mb-4">
+                <strong><i class="fas fa-exclamation-triangle"></i> Contract Notice:</strong><br>
+                If you do not comply or follow the right time of your booking and you are delayed for 10 minutes and beyond, the booking will be automatically cancelled.
+            </div>
+
+            <button type="submit" class="btn btn-success w-100 py-2 fw-bold">Confirm & Create Ticket</button>
         </form>
 
-        <a href="/logout" class="btn btn-secondary w-100 mt-3">Logout</a>
+        <div class="d-flex gap-2 mt-3">
+            <a href="{{ url_for('active_slots_user') }}" class="btn btn-outline-secondary w-50">Change Slot</a>
+            <a href="{{ url_for('staff_home') }}" class="btn btn-outline-dark w-50">Cancel</a>
+        </div>
     </div>
 </div>
 </body>

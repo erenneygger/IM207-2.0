@@ -1,26 +1,24 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Staff Home</title>
-
-<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
+    <title>Staff Home</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 <body>
 
 <div class="navbar">
     <a href="/" class="logo">
         <img src="{{ url_for('static', filename='images/logo.png') }}">
-        <span>PARKTOLL SYSTEM</span>
+        <span>PARKTOLL SYSTEM STAFF</span>
     </a>
 
     <div class="nav-links">
         <a href="/">Home</a>
-        <a href="/staff_home">Staff Panel</a>
-        <a href="/ticketing_staff">Book Ticket</a>
-        <a href="/active_slots_user">View Spaces</a>
-        <a href="/logout">Logout</a>
+        <a href="{{ url_for('staff_home') }}">Staff Panel</a>
+        <a href="{{ url_for('ticketing_stafforig') }}">Book Ticket</a>
+        <a href="{{ url_for('active_slots_user') }}">View Spaces</a>
+        <a href="{{ url_for('logout') }}">Logout</a>
     </div>
 </div>
 
@@ -34,21 +32,28 @@
         <i class="fas fa-eye"></i>
         <h3>View Parking Space</h3>
         <p>Explore available parking spaces</p>
-        <a href="/active_slots_user">Go →</a>
+        <a href="{{ url_for('active_slots_user') }}">Go →</a>
     </div>
 
     <div class="card">
         <i class="fas fa-book-open"></i>
         <h3>Book Parking Space</h3>
-        <p>Reserve your space now</p>
-        <a href="/ticketing_staff">Go →</a>
+        <p>Staff Original Booking System</p>
+        <a href="{{ url_for('ticketing_stafforig') }}">Go →</a>
     </div>
 
     <div class="card">
         <i class="fas fa-car"></i>
         <h3>Space Status</h3>
         <p>Check your space status</p>
-        <a href="/active_slots_user">Go →</a>
+        <a href="{{ url_for('active_slots_user') }}">Go →</a>
+    </div>
+
+    <div class="card">
+        <i class="fas fa-cash-register"></i>
+        <h3>Booth Payments</h3>
+        <p>Verify TXN & Confirm Exit</p>
+        <a href="{{ url_for('transaction_page') }}">Go →</a>
     </div>
 
 </div>
