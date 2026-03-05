@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, session, flash
+from flask import Flask, render_template, request, redirect, session, flash, url_for
 from datetime import datetime
 
 app = Flask(__name__)
@@ -44,9 +44,9 @@ def login():
             session["category"] = user["category"]
 
             if user["category"] == "Admin":
-                return redirect("/admin_home")
+                return redirect(url_for("admin_home"))
             else:
-                return redirect("/user_home")
+                return redirect(url_for("user_home"))
 
         flash("Invalid email or password!", "danger")
 
@@ -67,11 +67,11 @@ def register():
             "username": username,
             "email": email,
             "password": password,
-            "category": "Staff"  # still Staff category for users
+            "category": "Staff"
         })
 
         flash("Account created successfully!", "success")
-        return redirect("/login")
+        return redirect(url_for("login"))
 
     return render_template("register.html")
 
@@ -81,7 +81,7 @@ def register():
 def admin_home():
     if session.get("category") != "Admin":
         flash("Access denied!", "danger")
-        return redirect("/login")
+        return redirect(url_for("login"))
     return render_template("admin_home.html")
 
 
@@ -90,7 +90,7 @@ def admin_home():
 def user_home():
     if session.get("category") != "Staff":
         flash("Access denied!", "danger")
-        return redirect("/login")
+        return redirect(url_for("login"))
     return render_template("user_home.html")
 
 
@@ -99,17 +99,15 @@ def user_home():
 def dashboard():
     if session.get("category") != "Admin":
         flash("Access denied!", "danger")
-        return redirect("/login")
+        return redirect(url_for("login"))
 
     total_tickets = len(tickets)
     active_tickets = sum(1 for t in tickets if not t.get("exit_time"))
     total_income = sum(p["amount"] for p in payments)
 
-    # Count active vehicles by type
     car_count = sum(1 for t in tickets if t["vehicle_type"] == "car" and not t.get("exit_time"))
     moto_count = sum(1 for t in tickets if t["vehicle_type"] == "motorcycle" and not t.get("exit_time"))
 
-    # Recent tickets
     recent = sorted(tickets, key=lambda x: x["entry_time"], reverse=True)[:5]
 
     return render_template("dashboard.html",
@@ -121,13 +119,24 @@ def dashboard():
                            recent=recent)
 
 
-# ================= ACTIVE SLOTS =================
+# ================= ACTIVE SLOTS (ADMIN) =================
 @app.route("/active_slots")
-def active_slots_view():
-    if "username" not in session:
+def active_slots_admin():
+    if session.get("category") != "Admin":
         flash("Access denied!", "danger")
-        return redirect("/login")
+        return redirect(url_for("login"))
     return render_template("active_slots.html",
+                           car_slots=car_slots,
+                           moto_slots=motorcycle_slots)
+
+
+# ================= ACTIVE SLOTS (USER/STAFF) =================
+@app.route("/active_slots_user")
+def active_slots_user():
+    if session.get("category") != "Staff":
+        flash("Access denied!", "danger")
+        return redirect(url_for("login"))
+    return render_template("active_slots_user.html",
                            car_slots=car_slots,
                            moto_slots=motorcycle_slots)
 
@@ -137,7 +146,7 @@ def active_slots_view():
 def ticketing_staff():
     if "username" not in session or session.get("category") != "Staff":
         flash("Access denied!", "danger")
-        return redirect("/login")
+        return redirect(url_for("login"))
 
     if request.method == "POST":
         vehicle_type = request.form["vehicle_type"]
@@ -150,17 +159,17 @@ def ticketing_staff():
                 car_slots[slot] = True
             except ValueError:
                 flash("No available car slots!", "danger")
-                return redirect("/ticketing_staff")
+                return redirect(url_for("ticketing_staff"))
         else:
             try:
                 slot = motorcycle_slots.index(False)
                 motorcycle_slots[slot] = True
             except ValueError:
                 flash("No available motorcycle slots!", "danger")
-                return redirect("/ticketing_staff")
+                return redirect(url_for("ticketing_staff"))
 
         ticket_id = len(tickets) + 1
-        ticket = {
+        ticket_data = {
             "id": ticket_id,
             "username": session["username"],
             "plate_number": plate,
@@ -171,10 +180,10 @@ def ticketing_staff():
             "fee": 0,
             "discount_type": discount_type
         }
-        tickets.append(ticket)
+        tickets.append(ticket_data)
 
         flash(f"Ticket created! Slot {slot+1} reserved.", "success")
-        return redirect(f"/ticket/{ticket_id}")
+        return redirect(url_for("ticket", ticket_id=ticket_id))
 
     available_car = car_slots.count(False)
     available_moto = motorcycle_slots.count(False)
@@ -187,65 +196,64 @@ def ticketing_staff():
 # ================= TICKET VIEW =================
 @app.route("/ticket/<int:ticket_id>")
 def ticket(ticket_id):
-    ticket = next((t for t in tickets if t["id"] == ticket_id), None)
-    if not ticket:
+    ticket_data = next((t for t in tickets if t["id"] == ticket_id), None)
+    if not ticket_data:
         flash("Ticket not found!", "danger")
-        return redirect("/dashboard" if session.get("category") == "Admin" else "/user_home")
-    return render_template("ticketing.html", ticket=ticket)
+        return redirect(url_for("admin_home") if session.get("category") == "Admin" else url_for("user_home"))
+    return render_template("ticketing.html", ticket=ticket_data)
 
 
 # ================= EXIT VEHICLE =================
 @app.route("/exit/<int:ticket_id>")
 def exit_vehicle(ticket_id):
-    ticket = next((t for t in tickets if t["id"] == ticket_id), None)
-    if not ticket or ticket.get("exit_time"):
+    ticket_data = next((t for t in tickets if t["id"] == ticket_id), None)
+    if not ticket_data or ticket_data.get("exit_time"):
         flash("Invalid exit", "danger")
-        return redirect("/dashboard" if session.get("category") == "Admin" else "/user_home")
+        return redirect(url_for("dashboard") if session.get("category") == "Admin" else url_for("user_home"))
 
     exit_time = datetime.now()
-    hours = max(1, int((exit_time - ticket["entry_time"]).total_seconds() // 3600))
+    hours = max(1, int((exit_time - ticket_data["entry_time"]).total_seconds() // 3600))
     base_fee = hours * 50
-    discount = DISCOUNTS.get(ticket.get("discount_type", "none"), 0)
+    discount = DISCOUNTS.get(ticket_data.get("discount_type", "none"), 0)
     fee = int(base_fee * (1 - discount))
 
-    ticket["exit_time"] = exit_time
-    ticket["fee"] = fee
+    ticket_data["exit_time"] = exit_time
+    ticket_data["fee"] = fee
     payments.append({"ticket_id": ticket_id, "amount": fee})
 
-    if ticket["vehicle_type"] == "car":
-        car_slots[ticket["slot"] - 1] = False
+    if ticket_data["vehicle_type"] == "car":
+        car_slots[ticket_data["slot"] - 1] = False
     else:
-        motorcycle_slots[ticket["slot"] - 1] = False
+        motorcycle_slots[ticket_data["slot"] - 1] = False
 
     flash(f"Vehicle exited. Fee: ₱{fee}", "success")
-    return redirect(f"/ticket/{ticket_id}")
+    return redirect(url_for("ticket", ticket_id=ticket_id))
 
 
 # ================= GCASH PAYMENT =================
 @app.route("/gcash/<int:ticket_id>", methods=["GET", "POST"])
 def gcash(ticket_id):
-    ticket = next((t for t in tickets if t["id"] == ticket_id), None)
-    if not ticket:
+    ticket_data = next((t for t in tickets if t["id"] == ticket_id), None)
+    if not ticket_data:
         flash("Ticket not found!", "danger")
-        return redirect("/dashboard" if session.get("category") == "Admin" else "/user_home")
+        return redirect(url_for("user_home"))
 
     if request.method == "POST":
         amount = int(request.form["amount"])
-        gcash_number = request.form["gcash_number"]
-        if amount >= ticket["fee"]:
+        if amount >= ticket_data["fee"]:
             flash("Payment successful!", "success")
         else:
             flash("Insufficient payment!", "danger")
-        return redirect(f"/ticket/{ticket_id}")
+        return redirect(url_for("ticket", ticket_id=ticket_id))
 
-    return render_template("gcash_payment.html", ticket=ticket)
+    return render_template("gcash_payment.html", ticket=ticket_data)
 
 
 # ================= LOGOUT =================
 @app.route("/logout")
 def logout():
     session.clear()
-    return redirect("/")
+    return redirect(url_for("landing"))
 
 
 if __name__ == "__main__":
