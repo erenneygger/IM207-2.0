@@ -6,76 +6,89 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
         body { background-color: #f8f9fa; }
-        .slot-container {
-            background: white; padding: 30px; border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        }
-        /* Hide the actual radio button */
+        .slot-container { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         .slot-input { display: none; }
-
         .slot-label {
-            width: 80px; height: 80px; margin: 8px;
-            display: inline-flex; flex-direction: column;
-            align-items: center; justify-content: center;
-            color: white; font-weight: bold; border-radius: 10px;
-            cursor: pointer; transition: all 0.2s; font-size: 0.8rem;
+            width: 80px; height: 80px; margin: 8px; display: inline-flex; flex-direction: column;
+            align-items: center; justify-content: center; color: white; font-weight: bold; border-radius: 10px;
+            cursor: pointer; transition: all 0.2s; font-size: 0.8rem; text-decoration: none;
         }
-
         .available { background-color: #28a745; border: 2px solid #1e7e34; }
-        .occupied { background-color: #dc3545; border: 2px solid #bd2130; cursor: not-allowed; opacity: 0.7; }
-
-        /* Highlight when selected */
-        .slot-input:checked + .slot-label {
-            background-color: #007bff;
-            border: 4px solid #004085;
-            transform: scale(1.1);
-            box-shadow: 0 0 15px rgba(0,123,255,0.5);
-        }
-
-        .slot-label i { font-size: 1.4rem; margin-bottom: 4px; }
+        .occupied { background-color: #dc3545; border: 2px solid #bd2130; }
+        .restricted { opacity: 0.2; pointer-events: none; filter: grayscale(1); }
+        .slot-input:checked + .slot-label { background-color: #007bff; border: 4px solid #004085; transform: scale(1.1); }
     </style>
 </head>
 <body>
-<div class="container mt-5 mb-5">
+<div class="container mt-4">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}{% for category, message in messages %}<div class="alert alert-{{ category }}">{{ message }}</div>{% endfor %}{% endif %}
+    {% endwith %}
+
     <div class="slot-container">
-        <h3 class="mb-4 text-center text-primary">
-            <i class="fas fa-hand-pointer"></i> Select Your Parking Slot
-        </h3>
+        <h3 class="mb-4 text-center text-primary">Parking Map Status</h3>
 
         <form action="{{ url_for('ticketing_staff') }}" method="GET">
+            <input type="hidden" name="plate" value="{{ request.args.get('plate', '') }}">
+            <input type="hidden" name="b_date" value="{{ request.args.get('b_date', '') }}">
+            <input type="hidden" name="t_in" value="{{ request.args.get('t_in', '') }}">
+            <input type="hidden" name="t_out" value="{{ request.args.get('t_out', '') }}">
 
-            <h5 class="border-bottom pb-2"><i class="fas fa-car"></i> Car Area (S-Series)</h5>
-            <div class="d-flex flex-wrap justify-content-center mb-5">
-                {% for occupied in car_slots %}
-                    {% set slot_id = loop.index %}
-                    <input type="radio" name="selected_slot" value="car-{{ slot_id }}" id="car-{{ slot_id }}" class="slot-input" {% if occupied %}disabled{% endif %}>
-                    <label for="car-{{ slot_id }}" class="slot-label {% if occupied %}occupied{% else %}available{% endif %}">
-                        <i class="fas {% if occupied %}fa-car-side{% else %}fa-check-circle{% endif %}"></i>
-                        S-{{ slot_id }}
-                    </label>
-                {% endfor %}
+            <input type="hidden" name="pre_type" id="final_type" value="{{ filter_type if filter_type != 'all' else 'car' }}">
+            <input type="hidden" name="pre_slot" id="final_slot" value="">
+
+            <div class="{% if filter_type == 'motorcycle' %}restricted{% endif %}">
+                <h5>Car Area (S-Series)</h5>
+                <div class="d-flex flex-wrap justify-content-center mb-5">
+                    {% for occupied in car_slots %}
+                        {% set slot_id = loop.index %}
+                        {% if session.get('category') == 'Staff' and not request.args.get('plate') %}
+                            <a href="{{ url_for('check_slot_status', slot=slot_id, type='car') }}" class="slot-label {{ 'occupied' if occupied else 'available' }}">C-{{ slot_id }}</a>
+                        {% else %}
+                            <input type="radio" name="slot_choice" id="car-{{ slot_id }}" class="slot-input" {% if occupied or filter_type == 'motorcycle' %}disabled{% endif %} onclick="updateSelection('car', {{ slot_id }})">
+                            <label for="car-{{ slot_id }}" class="slot-label {{ 'occupied' if occupied else 'available' }}">C-{{ slot_id }}</label>
+                        {% endif %}
+                    {% endfor %}
+                </div>
             </div>
 
-            <h5 class="border-bottom pb-2"><i class="fas fa-motorcycle"></i> Motorcycle Area (M-Series)</h5>
-            <div class="d-flex flex-wrap justify-content-center mb-4">
-                {% for occupied in moto_slots %}
-                    {% set slot_id = loop.index %}
-                    <input type="radio" name="selected_slot" value="moto-{{ slot_id }}" id="moto-{{ slot_id }}" class="slot-input" {% if occupied %}disabled{% endif %}>
-                    <label for="moto-{{ slot_id }}" class="slot-label {% if occupied %}occupied{% else %}available{% endif %}">
-                        <i class="fas {% if occupied %}fa-motorcycle{% else %}fa-plus-circle{% endif %}"></i>
-                        M-{{ slot_id }}
-                    </label>
-                {% endfor %}
+            <div class="{% if filter_type == 'car' %}restricted{% endif %}">
+                <h5>Motorcycle Area (M-Series)</h5>
+                <div class="d-flex flex-wrap justify-content-center mb-4">
+                    {% for occupied in motorcycle_slots %}
+                        {% set slot_id = loop.index %}
+                        {% if session.get('category') == 'Staff' and not request.args.get('plate') %}
+                            <a href="{{ url_for('check_slot_status', slot=slot_id, type='motorcycle') }}" class="slot-label {{ 'occupied' if occupied else 'available' }}">M-{{ slot_id }}</a>
+                        {% else %}
+                            <input type="radio" name="slot_choice" id="moto-{{ slot_id }}" class="slot-input" {% if occupied or filter_type == 'car' %}disabled{% endif %} onclick="updateSelection('motorcycle', {{ slot_id }})">
+                            <label for="moto-{{ slot_id }}" class="slot-label {{ 'occupied' if occupied else 'available' }}">M-{{ slot_id }}</label>
+                        {% endif %}
+                    {% endfor %}
+                </div>
             </div>
 
-            <div class="text-center mt-5 gap-3 d-flex justify-content-center">
-                <a href="{{ url_for('staff_home') }}" class="btn btn-secondary px-4">Cancel</a>
-                <button type="submit" class="btn btn-primary btn-lg px-5">
-                    Confirm Selection <i class="fas fa-arrow-right"></i>
-                </button>
+            <div class="text-center mt-5">
+                {% if request.args.get('plate') %}
+                    <button type="submit" class="btn btn-primary btn-lg px-5">Confirm Selection</button>
+                {% endif %}
+
+                {% if session.get('category') == 'Staff' %}
+                    <a href="{{ url_for('staff_home') }}" class="btn btn-outline-secondary btn-lg px-5">Go Back to Dashboard</a>
+                {% elif session.get('category') == 'Admin' %}
+                    <a href="{{ url_for('admin_home') }}" class="btn btn-outline-secondary btn-lg px-5">Go Back to Dashboard</a>
+                {% else %}
+                    <a href="{{ url_for('user_home') }}" class="btn btn-outline-secondary btn-lg px-5">Go Back to Home</a>
+                {% endif %}
             </div>
         </form>
     </div>
 </div>
+
+<script>
+    function updateSelection(type, slotId) {
+        document.getElementById('final_type').value = type;
+        document.getElementById('final_slot').value = slotId;
+    }
+</script>
 </body>
 </html>

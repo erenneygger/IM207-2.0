@@ -1,101 +1,134 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Parking Ticket</title>
+    <title>Parking Ticket | PARKTOLL</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
+        body { background-color: #f0f2f5; padding-top: 30px; }
         .ticket-container {
-            max-width: 500px;
-            margin: 50px auto;
-            padding: 20px;
-            border: 2px dashed #333;
+            max-width: 450px;
+            margin: 0 auto;
+            padding: 30px;
             background: #fff;
+            border-radius: 4px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
             text-align: center;
             font-family: 'Courier New', Courier, monospace;
+            position: relative;
         }
+        /* Thermal receipt edge effect */
+        .ticket-container::after {
+            content: "";
+            position: absolute;
+            bottom: -10px; left: 0;
+            width: 100%; height: 10px;
+            background: linear-gradient(-45deg, #fff 5px, transparent 0),
+                        linear-gradient(45deg, #fff 5px, transparent 0);
+            background-size: 10px 10px;
+        }
+        .ticket-header h2 { margin: 0; font-weight: bold; border-bottom: 2px solid #333; display: inline-block; }
+
+        .qr-section { margin: 20px 0; }
+        .qr-section img {
+            border: 8px solid #f9f9f9;
+            box-shadow: 0 0 5px rgba(0,0,0,0.05);
+        }
+
         .txn-highlight {
-            font-size: 1.4rem;
+            font-size: 1.3rem;
             font-weight: bold;
-            color: #d9534f;
-            background: #f9f9f9;
-            padding: 10px;
-            border: 1px solid #ddd;
+            color: #fff;
+            background: #333;
+            padding: 8px 15px;
             display: inline-block;
-            margin: 15px 0;
+            margin: 10px 0;
+            border-radius: 2px;
         }
         .details-table {
             width: 100%;
             text-align: left;
             margin-top: 20px;
+            border-top: 1px dashed #ccc;
+            padding-top: 15px;
         }
-        .qr-placeholder {
-            margin: 20px 0;
-            font-size: 5rem;
-            color: #333;
-        }
+        .details-table tr td { padding: 5px 0; }
+        .details-table tr td:last-child { text-align: right; font-weight: bold; }
+
+        .footer-note { font-size: 0.8rem; color: #555; margin-top: 20px; border-top: 1px dashed #ccc; padding-top: 10px; }
+
         .btn-back {
             display: inline-block;
-            padding: 10px 20px;
-            background-color: #333;
+            padding: 12px 25px;
+            background-color: #007bff;
             color: white;
             text-decoration: none;
-            border-radius: 5px;
-            margin-top: 20px;
+            border-radius: 4px;
+            margin-top: 25px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+            transition: background 0.2s;
         }
+        .btn-back:hover { background-color: #0056b3; }
+
+        @media print { .btn-back { display: none; } }
     </style>
 </head>
 <body>
 
 <div class="ticket-container">
-    <h2>PARKTOLL SYSTEM</h2>
-    <p>Official Parking Receipt</p>
+    <div class="ticket-header">
+        <h2>PARKTOLL</h2>
+    </div>
+    <p style="margin: 5px 0;">Official Parking Receipt</p>
 
-    <div class="qr-placeholder">
-        <i class="fas fa-qrcode"></i>
+    <div class="qr-section">
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data={{ request.url_root.strip('/') }}{{ url_for('ticket', ticket_id=ticket.id) }}"
+             alt="Scan to View Ticket" width="180">
     </div>
 
     <div class="txn-highlight">
-        TXN: {{ ticket.transaction_no }}
+        ID: {{ ticket.transaction_no }}
     </div>
 
     <table class="details-table">
         <tr>
-            <td><strong>Plate Number:</strong></td>
+            <td>Plate No:</td>
             <td>{{ ticket.plate_number }}</td>
         </tr>
         <tr>
-            <td><strong>Vehicle Type:</strong></td>
+            <td>Vehicle:</td>
             <td>{{ ticket.vehicle_type|capitalize }}</td>
         </tr>
         <tr>
-            <td><strong>Slot Assigned:</strong></td>
-            <td>Slot #{{ ticket.slot }}</td>
+            <td>Slot:</td>
+            <td>S-{{ ticket.slot }}</td>
         </tr>
         <tr>
-            <td><strong>Entry Date:</strong></td>
-            <td>{{ ticket.entry_time.strftime('%Y-%m-%d') }}</td>
+            <td>Entry:</td>
+            <td>{{ ticket.entry_time.strftime('%Y-%m-%d %I:%M %p') }}</td>
         </tr>
         <tr>
-            <td><strong>Entry Time:</strong></td>
-            <td>{{ ticket.entry_time.strftime('%I:%M %p') }}</td>
+            <td>Amount:</td>
+            <td>₱25.00</td>
         </tr>
         <tr>
-            <td><strong>Status:</strong></td>
+            <td>Status:</td>
             <td>{{ ticket.status }}</td>
         </tr>
     </table>
 
-    <hr>
-    <p>Please present this TXN number at the booth before exiting.</p>
+    <div class="footer-note">
+        <p>Keep this ticket safe.<br>Scan at booth to verify payment.</p>
+    </div>
 
     <div style="margin-top: 20px;">
         {% if session.get('category') == 'Staff' %}
-            <a href="{{ url_for('staff_home') }}" class="btn-back">Back to Home</a>
+            <a href="{{ url_for('staff_home') }}" class="btn-back">Finish & Return</a>
         {% elif session.get('category') == 'Admin' %}
-            <a href="{{ url_for('admin_home') }}" class="btn-back">Back to Home</a>
+            <a href="{{ url_for('admin_home') }}" class="btn-back">Finish & Return</a>
         {% else %}
-            <a href="{{ url_for('user_home') }}" class="btn-back">Back to Home</a>
+            <a href="{{ url_for('user_home') }}" class="btn-back">Finish & Return</a>
         {% endif %}
     </div>
 </div>

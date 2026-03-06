@@ -27,34 +27,38 @@
         </div>
         {% endif %}
 
-        <form method="post">
+        <form method="post" id="bookingForm">
             <input type="hidden" name="manual_slot" value="{{ pre_slot|default('') }}">
 
             <div class="mb-3">
                 <label class="form-label fw-bold">Vehicle Type</label>
-                <select class="form-select" name="vehicle_type" required>
+                <select class="form-select" name="vehicle_type" id="vehicle_type" required>
                     <option value="car" {% if pre_type|default('') == 'car' %}selected{% endif %}>Car</option>
-                    <option value="motorcycle" {% if pre_type|default('') == 'moto' or pre_type|default('') == 'motorcycle' %}selected{% endif %}>Motorcycle</option>
+                    <option value="motorcycle" {% if pre_type|default('') == 'motorcycle' or pre_type|default('') == 'moto' %}selected{% endif %}>Motorcycle</option>
                 </select>
             </div>
 
             <div class="mb-3">
                 <label class="form-label fw-bold">Plate Number</label>
-                <input type="text" name="plate" class="form-control" placeholder="ABC-1234" required>
+                <input type="text" name="plate" id="plate" class="form-control"
+                       placeholder="ABC-1234" value="{{ request.args.get('plate', '') }}" required>
             </div>
 
             <div class="row">
                 <div class="col-md-12 mb-3">
                     <label class="form-label fw-bold">Booking Date</label>
-                    <input type="date" name="booking_date" class="form-control" required>
+                    <input type="date" name="booking_date" id="booking_date" class="form-control"
+                           value="{{ request.args.get('b_date', '') }}" required>
                 </div>
                 <div class="col-md-6 mb-3">
                     <label class="form-label fw-bold">Time In</label>
-                    <input type="time" name="time_in" class="form-control" required>
+                    <input type="time" name="time_in" id="time_in" class="form-control"
+                           value="{{ request.args.get('t_in', '') }}" required>
                 </div>
                 <div class="col-md-6 mb-3">
                     <label class="form-label fw-bold">Time Out</label>
-                    <input type="time" name="time_out" class="form-control" required>
+                    <input type="time" name="time_out" id="time_out" class="form-control"
+                           value="{{ request.args.get('t_out', '') }}" required>
                 </div>
             </div>
 
@@ -67,10 +71,31 @@
         </form>
 
         <div class="d-flex gap-2 mt-3">
-            <a href="{{ url_for('active_slots_user') }}" class="btn btn-outline-secondary w-50">Change Slot</a>
+            <button type="button" onclick="goToFilteredSlots()" class="btn btn-outline-secondary w-50">Change Slot</button>
             <a href="{{ url_for('staff_home') }}" class="btn btn-outline-dark w-50">Cancel</a>
         </div>
     </div>
 </div>
+
+<script>
+    function goToFilteredSlots() {
+        const type = document.getElementById('vehicle_type').value;
+        const plate = document.getElementById('plate').value;
+        const b_date = document.getElementById('booking_date').value;
+        const t_in = document.getElementById('time_in').value;
+        const t_out = document.getElementById('time_out').value;
+
+        // Redirect with all current form data as URL parameters
+        const url = "{{ url_for('active_slots_user') }}?" +
+                    "filter_type=" + encodeURIComponent(type) +
+                    "&plate=" + encodeURIComponent(plate) +
+                    "&b_date=" + encodeURIComponent(b_date) +
+                    "&t_in=" + encodeURIComponent(t_in) +
+                    "&t_out=" + encodeURIComponent(t_out);
+
+        window.location.href = url;
+    }
+</script>
+
 </body>
 </html>
