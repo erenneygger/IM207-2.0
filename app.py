@@ -138,7 +138,6 @@ def ticketing_staff():
             flash(f"Slot error: {str(e)}", "danger")
             return redirect(url_for("active_slots_user"))
 
-    # Capture data passed from the map URL
     data = {
         "plate": request.args.get('plate', ''),
         "b_date": request.args.get('b_date', ''),
@@ -148,6 +147,66 @@ def ticketing_staff():
         "pre_slot": request.args.get('pre_slot', '')
     }
     return render_template("ticketing_staff.html", **data)
+
+
+# ==========================================================
+# CUSTOMER DATA ROUTE (UPDATED FOR PDF, INCOME & TIME)
+# ==========================================================
+
+@app.route("/customer_data")
+def customer_data():
+    if "username" not in session: return redirect(url_for("login"))
+
+    search_query = request.args.get('search', '').strip().upper()
+    date_filter = request.args.get('date', '')
+
+    filtered_tickets = tickets
+
+    if search_query:
+        filtered_tickets = [t for t in filtered_tickets if
+                            search_query in t['plate_number'].upper() or search_query in t['transaction_no'].upper()]
+
+    if date_filter:
+        filtered_tickets = [t for t in filtered_tickets if t['entry_time'].strftime('%Y-%m-%d') == date_filter]
+
+    filtered_income = sum(t['total_paid'] for t in filtered_tickets)
+    filtered_tickets = filtered_tickets[::-1]
+
+    return render_template("customer_data.html",
+                           tickets=filtered_tickets,
+                           search_query=search_query,
+                           date_filter=date_filter,
+                           income=filtered_income,
+                           datetime=datetime)
+
+
+# ==========================================================
+# DELETE TICKET (ADMIN ONLY)
+# ==========================================================
+
+@app.route("/delete_ticket/<int:ticket_id>")
+def delete_ticket(ticket_id):
+    if session.get("category") != "Admin":
+        flash("Unauthorized access! Admin only.", "danger")
+        return redirect(url_for("customer_data"))
+
+    global tickets
+    t_data = next((t for t in tickets if t["id"] == ticket_id), None)
+
+    if t_data:
+        # Free slot if car hasn't exited
+        if t_data["exit_time"] is None:
+            slot_idx = t_data["slot"] - 1
+            if t_data["vehicle_type"] == "car":
+                car_slots[slot_idx] = False
+            else:
+                motorcycle_slots[slot_idx] = False
+
+        # Filter out the deleted ticket
+        tickets = [t for t in tickets if t["id"] != ticket_id]
+        flash(f"Transaction {t_data['transaction_no']} has been deleted.", "success")
+
+    return redirect(url_for("customer_data"))
 
 
 # ==========================================================
@@ -178,7 +237,6 @@ def check_slot_status():
 
     if not ticket_data:
         flash(f"Slot {v_type[0].upper()}-{slot_no} is currently unoccupied.", "info")
-        # REDIRECT BACK TO MAP
         return redirect(url_for('active_slots_user'))
 
     now = datetime.now()
@@ -263,7 +321,6 @@ def exit_vehicle(ticket_id):
         else:
             motorcycle_slots[slot_idx] = False
 
-    # ROLE-BASED REDIRECT
     cat = session.get('category')
     if cat == 'Staff': return redirect(url_for("staff_home"))
     if cat == 'Admin': return redirect(url_for("admin_home"))

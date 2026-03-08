@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Customer Data Registry</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        body { background-color: #f4f7f6; }
+        .table-container { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); }
+        .search-box { border-radius: 30px; }
+        
+        @media print {
+            .no-print, .btn, .navbar, form { display: none !important; }
+            .table-container { box-shadow: none; border: none; padding: 0; }
+            .print-only { display: block !important; }
+            body { background-color: white; }
+            .table { border: 1px solid #000; }
+        }
+        .print-only { display: none; }
+    </style>
+</head>
+<body>
+<div class="container mt-5">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} alert-dismissible fade show no-print" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <div class="print-only text-center mb-4">
+        <h2>PARKTOLL SYSTEM - TRANSACTION REPORT</h2>
+        <p>Generated on: {{ datetime.now().strftime('%Y-%m-%d %I:%M %p') }}</p>
+        <hr>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-4 no-print">
+        <h2 class="text-primary"><i class="fas fa-users-cog"></i> Customer Data Registry</h2>
+        <div>
+            <button onclick="window.print()" class="btn btn-success me-2">
+                <i class="fas fa-file-pdf"></i> Download PDF
+            </button>
+            <a href="{{ url_for('admin_home' if session.get('category') == 'Admin' else 'staff_home') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back
+            </a>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <form method="GET" action="{{ url_for('customer_data') }}" class="mb-4 no-print">
+            <div class="row g-2">
+                <div class="col-md-5">
+                    <input type="text" name="search" class="form-control search-box" placeholder="Search Plate or Transaction ID..." value="{{ search_query }}">
+                </div>
+                <div class="col-md-3">
+                    <input type="date" name="date" class="form-control" value="{{ date_filter }}">
+                </div>
+                <div class="col-md-4 d-flex gap-2">
+                    <button class="btn btn-primary flex-grow-1" type="submit"><i class="fas fa-filter"></i> Apply Filters</button>
+                    <a href="{{ url_for('customer_data') }}" class="btn btn-outline-secondary">Reset</a>
+                </div>
+            </div>
+        </form>
+
+        <table class="table table-hover align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>Transaction ID</th>
+                    <th>Plate Number</th>
+                    <th>Vehicle</th>
+                    <th>Slot</th>
+                    <th>Entry Time</th>
+                    <th>Status</th>
+                    <th class="text-center no-print">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in tickets %}
+                <tr>
+                    <td><span class="badge bg-info text-dark">{{ t.transaction_no }}</span></td>
+                    <td><strong>{{ t.plate_number }}</strong></td>
+                    <td>{{ t.vehicle_type|capitalize }}</td>
+                    <td>{{ t.vehicle_type[0]|upper }}-{{ t.slot }}</td>
+                    <td>
+                        <small class="text-muted">{{ t.entry_time.strftime('%Y-%m-%d') }}</small><br>
+                        {{ t.entry_time.strftime('%I:%M %p') }}
+                    </td>
+                    <td>
+                        {% if t.status == 'Fully Paid' %}
+                            <span class="badge bg-success">Paid</span>
+                        {% else %}
+                            <span class="badge bg-warning text-dark">Pending</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-center no-print">
+                        <div class="d-flex justify-content-center gap-1">
+                            <a href="{{ url_for('transaction_page', search=t.transaction_no) }}" class="btn btn-danger btn-sm" title="Exit Process">
+                                <i class="fas fa-sign-out-alt"></i>
+                            </a>
+
+                            {% if session.get('category') == 'Admin' %}
+                            <a href="{{ url_for('delete_ticket', ticket_id=t.id) }}"
+                               class="btn btn-outline-danger btn-sm"
+                               onclick="return confirm('Permanently delete this record? This cannot be undone.')">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="text-center py-4 text-muted">No records found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot class="table-light">
+                <tr>
+                    <td colspan="5" class="text-end"><strong>Total Filtered Income:</strong></td>
+                    <td colspan="2" class="text-primary text-center"><strong>₱{{ income }}</strong></td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

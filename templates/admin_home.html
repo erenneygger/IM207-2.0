@@ -1,16 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Admin Home</title>
-
-<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
+    <title>Admin Home</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 <body>
 
 <div class="navbar">
-
     <a href="/admin_home" class="logo-nav">
         <img src="{{ url_for('static', filename='images/logo.png') }}">
         <span>PARKTOLL SYSTEM</span>
@@ -18,10 +15,9 @@
 
     <div class="nav-links">
         <a href="/dashboard">Dashboard</a>
-        <a href="/active_slots">View Spaces</a>
-        <a href="/logout" style="margin-left:50px;">Logout</a>
+        <a href="{{ url_for('active_slots_user') }}">View Spaces</a>
+        <a href="{{ url_for('logout') }}" style="margin-left:50px;">Logout</a>
     </div>
-
 </div>
 
 <div class="hero">
@@ -29,28 +25,40 @@
 </div>
 
 <div class="cards">
-
     <div class="card">
         <i class="fas fa-eye"></i>
         <h3>View Parking Space</h3>
         <p>Explore available parking spaces</p>
-        <a href="/active_slots">Go →</a>
+        <a href="{{ url_for('active_slots_user') }}">Go →</a>
     </div>
 
     <div class="card">
-        <i class="fas fa-book-open"></i>
+        <i class="fas fa-chart-line"></i>
         <h3>View Reports</h3>
         <p>Check reports and income</p>
         <a href="/dashboard">Go →</a>
     </div>
 
     <div class="card">
-        <i class="fas fa-car"></i>
-        <h3>Space Status</h3>
-        <p>Check current usage</p>
-        <a href="/active_slots">Go →</a>
+        <i class="fas fa-user-friends"></i>
+        <h3>Customer Data</h3>
+        <p>View and filter all customer records</p>
+        <a href="{{ url_for('customer_data') }}">Go →</a>
     </div>
 
+    <div class="card">
+        <i class="fas fa-book-open"></i>
+        <h3>Book Parking Space</h3>
+        <p>Admin Direct Booking System</p>
+        <a href="{{ url_for('ticketing_stafforig') }}">Go →</a>
+    </div>
+
+    <div class="card">
+        <i class="fas fa-cash-register"></i>
+        <h3>Booth Payments</h3>
+        <p>Verify TXN & Confirm Exit</p>
+        <a href="{{ url_for('transaction_page') }}">Go →</a>
+    </div>
 </div>
 
 </body>
