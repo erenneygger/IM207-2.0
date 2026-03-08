@@ -3,8 +3,12 @@
 body {
     margin: 0;
     padding: 0;
-    background-color: #cfd6df;
+    /* Updated to the professional blue gradient from your login page */
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #6dd5ed 100%);
+    background-size: cover;
+    background-attachment: fixed;
     font-family: Arial, sans-serif;
+    min-height: 100vh;
 }
 
 /* ================= LANDING PAGE ================= */
@@ -48,39 +52,54 @@ h2 {
 /* ================= NAVBAR ================= */
 
 .navbar {
-    background: #9fb8cc;
+    /* Updated to match the dark professional blue */
+    background: #1e3c72 !important;
     padding: 15px 50px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
 }
 
 .logo-nav {
     display: flex;
     align-items: center;
     text-decoration: none;
+    flex-shrink: 0; /* Prevents logo section from squashing */
 }
 
 .logo-nav img {
-    height: 40px;
-    margin-right: 10px;
+    height: 80px; /* Made the logo much bigger */
+    margin-right: 15px;
 }
 
 .logo-nav span {
-    font-size: 22px;
-    font-weight: bold;
-    color: #1b4f72;
+    /* Implementation of requested blue color and single-line fix */
+    font-size: 24px;
+    font-weight: 800;
+    color: #6dd5ed !important;
+    font-family: 'Arial Black', sans-serif;
+    text-transform: uppercase;
+    white-space: nowrap; /* Forces PARKTOLL SYSTEM STAFF onto one line */
+    letter-spacing: 1px;
+}
+
+.nav-links {
+    display: flex;
+    align-items: center;
 }
 
 .nav-links a {
     margin-left: 30px;
     text-decoration: none;
-    color: white;
-    font-weight: 500;
+    color: white !important;
+    font-weight: 600;
+    transition: 0.3s;
 }
 
 .nav-links a:hover {
-    text-decoration: underline;
+    color: #6dd5ed !important;
+    text-decoration: none;
 }
 
 
@@ -90,6 +109,7 @@ h2 {
     width: 100%;
     height: 300px;
     object-fit: cover;
+    border-bottom: 4px solid #6dd5ed; /* Added a blue accent line */
 }
 
 
@@ -101,38 +121,45 @@ h2 {
     gap: 40px;
     margin-top: -70px;
     padding-bottom: 60px;
+    flex-wrap: wrap; /* Added for better mobile support */
 }
 
 .card {
     background: white;
     width: 260px;
-    height: 220px;
+    height: auto; /* Changed to auto to fit content naturally */
+    min-height: 220px;
     text-align: center;
-    padding-top: 40px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-    border-radius: 6px;
+    padding: 30px 20px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2); /* Stronger shadow for the gradient background */
+    border-radius: 12px; /* Slightly smoother corners */
     transition: 0.3s;
 }
 
 .card:hover {
-    transform: translateY(-5px);
+    transform: translateY(-8px);
 }
 
 .card i {
     font-size: 50px;
     margin-bottom: 20px;
+    color: #1e3c72; /* Themed icons */
 }
 
 .card h3 {
     color: #2e5f8a;
+    margin-top: 0;
 }
 
 .card p {
-    color: gray;
+    color: #666;
+    font-size: 14px;
 }
 
 .card a {
     text-decoration: none;
-    color: #2e5f8a;
+    color: #2a5298;
     font-weight: bold;
+    display: inline-block;
+    margin-top: 10px;
 }

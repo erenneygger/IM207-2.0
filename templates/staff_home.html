@@ -4,13 +4,98 @@
     <title>Staff Home</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+    <style>
+        /* 1. Background Gradient (Matches Login) */
+        body {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #6dd5ed 100%);
+            background-size: cover;
+            background-attachment: fixed;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        /* 2. Header / Navbar Color Fix */
+        .navbar {
+            background-color: #1e3c72 !important;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+            /* Increased padding to accommodate the massive logo */
+            padding: 10px 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        /* 3. Logo and Text Styling */
+        .logo {
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            /* Prevents the logo section from shrinking */
+            flex-shrink: 0;
+        }
+
+        .logo-img-massive {
+            /* Increased from 70px to 110px for maximum visibility */
+            height: 110px;
+            width: auto;
+            margin-right: 20px;
+        }
+
+        /* Styling for PARKTOLL SYSTEM STAFF */
+        .brand-text {
+            color: #6dd5ed !important;
+            font-weight: 800;
+            font-size: 2rem; /* Slightly larger text to match logo scale */
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            font-family: 'Arial Black', sans-serif;
+            white-space: nowrap; /* Keeps it on one line as we discussed */
+        }
+
+        /* Navbar Link Styling */
+        .nav-links a {
+            color: white !important;
+            text-decoration: none;
+            margin: 0 15px;
+            font-weight: 600;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: #6dd5ed !important;
+        }
+
+        /* 4. Card Styling */
+        .cards {
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 25px;
+        }
+
+        .card {
+            background: white;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            transition: transform 0.3s ease;
+            border-radius: 12px;
+            width: 280px;
+            padding: 25px;
+            text-align: center;
+        }
+
+        .card:hover {
+            transform: translateY(-8px);
+        }
+    </style>
 </head>
 <body>
 
 <div class="navbar">
     <a href="/" class="logo">
-        <img src="{{ url_for('static', filename='images/logo.png') }}">
-        <span>PARKTOLL SYSTEM STAFF</span>
+        <img src="{{ url_for('static', filename='images/logo.png') }}" class="logo-img-massive" alt="Logo">
+        <span class="brand-text">PARKTOLL SYSTEM STAFF</span>
     </a>
 
     <div class="nav-links">
@@ -23,36 +108,36 @@
 </div>
 
 <div class="hero">
-    <img src="{{ url_for('static', filename='images/parking.jpg') }}">
+    <img src="{{ url_for('static', filename='images/parking.jpg') }}" style="width: 100%; height: auto; max-height: 350px; object-fit: cover; border-bottom: 4px solid #6dd5ed;">
 </div>
 
 <div class="cards">
     <div class="card">
-        <i class="fas fa-eye"></i>
+        <i class="fas fa-eye" style="font-size: 2.5rem; color: #1e3c72; margin-bottom: 15px;"></i>
         <h3>View Parking Space</h3>
         <p>Explore available parking spaces</p>
-        <a href="{{ url_for('active_slots_user') }}">Go →</a>
+        <a href="{{ url_for('active_slots_user') }}" style="color: #2a5298; font-weight: bold; text-decoration: none;">Go →</a>
     </div>
 
     <div class="card">
-        <i class="fas fa-book-open"></i>
+        <i class="fas fa-book-open" style="font-size: 2.5rem; color: #1e3c72; margin-bottom: 15px;"></i>
         <h3>Book Parking Space</h3>
         <p>Staff Original Booking System</p>
-        <a href="{{ url_for('ticketing_stafforig') }}">Go →</a>
+        <a href="{{ url_for('ticketing_stafforig') }}" style="color: #2a5298; font-weight: bold; text-decoration: none;">Go →</a>
     </div>
 
     <div class="card">
-        <i class="fas fa-user-friends"></i>
+        <i class="fas fa-user-friends" style="font-size: 2.5rem; color: #1e3c72; margin-bottom: 15px;"></i>
         <h3>Customer Data</h3>
         <p>View and manage all customer records</p>
-        <a href="{{ url_for('customer_data') }}">Go →</a>
+        <a href="{{ url_for('customer_data') }}" style="color: #2a5298; font-weight: bold; text-decoration: none;">Go →</a>
     </div>
 
     <div class="card">
-        <i class="fas fa-cash-register"></i>
+        <i class="fas fa-cash-register" style="font-size: 2.5rem; color: #1e3c72; margin-bottom: 15px;"></i>
         <h3>Booth Payments</h3>
         <p>Verify TXN & Confirm Exit</p>
-        <a href="{{ url_for('transaction_page') }}">Go →</a>
+        <a href="{{ url_for('transaction_page') }}" style="color: #2a5298; font-weight: bold; text-decoration: none;">Go →</a>
     </div>
 </div>
 
