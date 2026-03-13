@@ -5,15 +5,25 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
-        body { background-color: #f4f7f6; }
-        .table-container { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); }
+        /* Updated Background to Gradient Blue */
+        body {
+            background: linear-gradient(135deg, #007bff 0%, #003366 100%);
+            min-height: 100vh;
+            margin: 0;
+            background-attachment: fixed; /* Ensures the gradient covers the whole page while scrolling */
+        }
+
+        /* Adjusted title color for better visibility against blue */
+        h2.text-primary { color: #ffffff !important; text-shadow: 1px 1px 3px rgba(0,0,0,0.2); }
+
+        .table-container { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
         .search-box { border-radius: 30px; }
-        
+
         @media print {
             .no-print, .btn, .navbar, form { display: none !important; }
             .table-container { box-shadow: none; border: none; padding: 0; }
             .print-only { display: block !important; }
-            body { background-color: white; }
+            body { background-color: white !important; background: none !important; }
             .table { border: 1px solid #000; }
         }
         .print-only { display: none; }

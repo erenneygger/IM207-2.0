@@ -8,7 +8,17 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
-        body { background: #e8eff9; }
+        /* Updated Background to Blue Gradient */
+        body {
+            background: linear-gradient(135deg, #007bff 0%, #003366 100%);
+            min-height: 100vh;
+            margin: 0;
+            background-attachment: fixed; /* Keeps gradient from resetting when scrolling */
+        }
+
+        /* Ensuring the header text is visible against the new dark background */
+        .dashboard-header h3 { color: white; text-shadow: 1px 1px 4px rgba(0,0,0,0.3); }
+
         .navbar-brand { font-weight: 600; font-size: 1.3rem; }
         .dashboard-header { text-align: center; padding: 20px 0; }
         .dashboard-header img { height: 70px; margin-bottom: 10px; }
